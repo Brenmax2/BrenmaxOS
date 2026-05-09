@@ -17,15 +17,24 @@ void loop() {
     updateRTC();
     
     // Taskbar
-    draw_RectTRANS(768 - 25, 0, 1024, 25, 0x52AA, 3);
-    drawButton(768 - 22, 4, 18, 18, 0xFFFF, "", 2);
+    draw_RectTRANS(768 - 35, 0, 1024, 35, 0x52AA, 3);
+    drawButton(768 - 28, 4, 22, 22, 0xFFFF, "", 2);
+    draw_Rect(768 - 35, 0, 1024, 1, 0xC618);
 
-    drawButton(768 - 22, 26, 90, 18, 0xFFFF, "CMD Prompt", 3);
-    drawButton(768 - 22, 127, 90, 18, 0xFFFF, "Welcome", 5);
-    drawButton(768 - 22, 228, 90, 18, 0xFFFF, "Piano", 6);
-    drawButton(768 - 22, 329, 90, 18, 0xFFFF, "Settings", 7);
+    drawButton(768 - 28, 26 + 5, 90, 22, 0xFFFF, "CMD Prompt", 3);
+    drawButton(768 - 28, 129 + 5, 90, 22, 0xFFFF, "Welcome", 5);
+    drawButton(768 - 28, 232 + 5, 90, 22, 0xFFFF, "Piano", 6);
+    drawButton(768 - 28, 335 + 5, 90, 22, 0xFFFF, "Settings", 7);
     
-    drawString(time, 1024 - 77, 768 - 8 - 7, 0xFFFF);
+    drawString1(time, 1024 - 77, 768 - 8 - 15, 0xFFFF);
+    
+    for (int i = 0; i < 9; i++) {
+        uint16_t grid_row = i / 3;
+        uint16_t grid_col = i % 3;
+        uint16_t square_l = 4 + 2 + (grid_col * 7); 
+        uint16_t square_t = 768 - 28 + 2 + (grid_row * 7);
+        draw_Rect(square_t, square_l, 5, 5, 0xFFFF);
+    }
 
     if (inb(0x1F7) & 0x08) {
         if (address != 0) {
@@ -90,15 +99,6 @@ void loop() {
 
     if(startOpened){
         draw_Rect(768 - 200 - 25, 0, 150, 200, 0x52AA);
-    }
-    draw_Rect(768 - 26, 0, 1024, 1, 0xC618);
-
-    for (int i = 0; i < 9; i++) {
-        uint16_t grid_row = i / 3;
-        uint16_t grid_col = i % 3;
-        uint16_t square_l = 4 + 2 + (grid_col * 5); 
-        uint16_t square_t = 768 - 22 + 2 + (grid_row * 5);
-        draw_Rect(square_t, square_l, 4, 4, 0xFFFF);
     }
 
     if (last_scancode == 0x3B) {

@@ -85,6 +85,27 @@ void drawString(char *text, uint16_t x, uint16_t y, uint16_t color) {
     }
 }
 
+
+void drawString1(char *text, uint16_t x, uint16_t y, uint16_t color) {
+    int column = 0;
+    int row_offset = 0;
+
+    for (int i = 0; text[i] != '\0'; i++) {
+        char c = text[i];
+
+        if (c == '\n') {
+            column = 0;
+            row_offset += 9;
+            continue;
+        }
+
+        uint16_t draw_x = x + (column * 8);
+        uint16_t draw_y = y + row_offset;
+        drawChar(draw_x, draw_y, text[i], 0xFFFF);
+        column++;
+    }
+}
+
 void drawChar_THIN(int x, int y, unsigned char c, int color) {
     for (int row = 0; row < 8; row++) {
         unsigned char rowData = font8x8_THIN[c][row];
@@ -97,10 +118,11 @@ void drawChar_THIN(int x, int y, unsigned char c, int color) {
 }
 
 void drawChar(int x, int y, unsigned char c, int color) {
+    if (c > 127) return;
     for (int row = 0; row < 16; row++) {
-        unsigned char rowData = font8x16[c][row];
-        for (int col = 0; col < 8; col++) {
-            if (rowData & (0x80 >> col)) {
+        uint16_t rowData = font8x16[c][row];
+        for (int col = 0; col < 16; col++) {
+            if (rowData & (0x8000 >> col)) {
                 drawPixel(x + col, y + row, color);
             }
         }
@@ -177,14 +199,26 @@ void drawMouse(int x_offset, int y_offset) {
 
 void drawDesktop() {
     if(Wallpaper == 0){
-        for (uint32_t y = 0; y < 768; y++) {
-            uint16_t b = 31 - (y * 31 / 767);
-            uint16_t g = (y * 63 / 767);
-            uint16_t r = 0;
-            uint16_t color = (r << 11) | (g << 5) | b;
+        int g1 = 66, b1 = 116;
+        int g2 = 23, b2 = 70;
 
+        int dg = g2 - g1;
+        int db = b2 - b1;
+
+        for (uint32_t y = 0; y < 768; y++) {
             for (uint32_t x = 0; x < 1024; x++) {
-                disp[y * 1024 + x] = color;
+                int t = ((y * 3) - (x * 2) + 2048) / 16; 
+                
+                if (t < 0) t = 0;
+                if (t > 255) t = 255;
+
+                int currG = g1 + (t * dg / 255);
+                int currB = b1 + (t * db / 255);
+
+                uint16_t g_bits = (currG * 63) / 255;
+                uint16_t b_bits = (currB * 31) / 255;
+
+                disp[y * 1024 + x] = (g_bits << 5) | b_bits;
             }
         }
     }else{

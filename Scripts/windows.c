@@ -69,7 +69,7 @@ void handleWindowDragging() {
 
         if (new_left < 0) new_left = 0;
         if (new_top < 0) new_top = 0;
-        if (new_left > 1024 - (width + 8)) new_left = 1024 - (width + 8);
+        if (new_left > 1024 - (width + 12)) new_left = 1024 - (width + 12);
         if (new_top > 768 - (height + 20)) new_top = 768 - (height + 20);
         windows[active_window][1] = (uint16_t)new_left;
         windows[active_window][0] = (uint16_t)new_top;
