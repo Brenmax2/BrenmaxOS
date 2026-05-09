@@ -26,6 +26,6 @@ void kernel_main() {
 #include "Scripts/GUI.c"
 #include "Scripts/windows.c"
 #include "Scripts/misc.c"
-#include "Scripts/file system.c"
+#include "Scripts/jiouFS.c"
 #include "Scripts/command.c"
 #include "Scripts/loop.c"

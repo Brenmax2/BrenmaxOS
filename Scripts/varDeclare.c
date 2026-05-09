@@ -34,7 +34,7 @@ uint16_t bdy[10] = {2, 2, 3, 3, 4, 4, 2, 2, 3, 3};
 uint16_t bcol[10] = {0x07E0, 0xF800, 0x001F, 0xFFE0, 0xF81F, 0x07FF, 0xFFFF, 0x7BEF, 0xAFE5, 0xFD20};
 uint16_t currX = 0;
 uint16_t currY = 0;
-uint16_t *console_buffer = (uint16_t *)0x00300000;
+uint16_t *console_buffer = (uint16_t *)0x00400000;
 uint16_t line = 1;
 uint16_t inputBufferIndex = 0;
 uint16_t inputBuffer[60];
