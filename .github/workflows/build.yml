@@ -1,0 +1,62 @@
+name: Auto Build & Release
+
+on:
+  push:
+    paths:
+      - '**.c'
+      - '**.ld'
+      - '**.asm'
+      - '**.bin'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y nasm gcc make
+
+      - name: Build kernel
+        run: |
+          i686-elf-gcc -ffreestanding -O2 -nostdlib kernel.c -o kernel.bin -T Others/linker.ld
+
+      - name: Build OS image
+        run: |
+          nasm -f bin "BrenmaxOS.asm" -o "BrenmaxOS.img"
+
+      - name: Generate release info
+        id: release_info
+        run: |
+          DATE=$(date +'%d-%m-%y')
+          BASE_TAG="Release-${DATE}"
+
+          # Get all existing tags matching today's release
+          git fetch --tags
+
+          MATCHING=$(git tag | grep "^${BASE_TAG}" || true)
+
+          if [ -z "$MATCHING" ]; then
+            FINAL_TAG="${BASE_TAG}"
+          else
+            COUNT=$(echo "$MATCHING" | wc -l)
+            NEXT=$((COUNT + 1))
+            FINAL_TAG="${BASE_TAG}v${NEXT}"
+          fi
+
+          echo "tag=$FINAL_TAG" >> $GITHUB_OUTPUT
+          echo "title=Release ${DATE}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: ${{ steps.release_info.outputs.title }}
+          files: |
+            BrenmaxOS.img
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
