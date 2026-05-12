@@ -1,13 +1,12 @@
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
 
-static inline void outl(uint16_t port, uint32_t val) {
-    __asm__ volatile ("outl %0, %1" : : "a"(val), "Nd"(port));
-}
-
-static inline uint32_t inl(uint16_t port) {
-    uint32_t ret;
-    __asm__ volatile ("inl %1, %0" : "=a"(ret) : "Nd"(port));
-    return ret;
-}
 
 static void play_sound(uint32_t nFrequence) {
     uint32_t Div;

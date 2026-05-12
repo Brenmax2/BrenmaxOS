@@ -1,3 +1,12 @@
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
+
 void add_window(uint8_t id, uint16_t t, uint16_t l, uint16_t w, uint16_t h, char *title) {
     if (window_count < 100) {
         windows[window_count][0] = t;

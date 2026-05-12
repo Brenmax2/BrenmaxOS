@@ -1,3 +1,12 @@
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
+
 int readyto = 0;
 int readyto1 = 0;
 int readyto2 = 0;
