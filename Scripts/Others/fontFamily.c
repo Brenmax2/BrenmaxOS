@@ -1,7 +1,7 @@
 //font from
 //https://drive.google.com/file/d/1oJHyhD_p9ZEgVO4lxocanDY5dZM02Oyz/view?usp=sharing
-
-static const uint8_t font8x8_THIN[128][8] = {
+#include <stdint.h>
+const uint8_t font8x8_THIN[128][8] = {
     {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, // 0-15
     {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, // 16-31
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, //   (32)
@@ -236,14 +236,14 @@ unsigned char font8x16[][16] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  },       //0x7F, delete
 };
 
-static const char scancode_to_ascii[128] = {
+const char scancode_to_ascii[128] = {
     0,  0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 
     0, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', 0, 
     0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, 
     '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, 0, 0, ' '
 };
 
-static const char scancode_to_ascii_shift[128] = {
+const char scancode_to_ascii_shift[128] = {
     0,  0, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0, 
     0, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0, 
     0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 0, 

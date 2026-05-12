@@ -1,7 +1,11 @@
-
-static inline void outw(uint16_t port, uint16_t val) {
-    __asm__ __volatile__ ("outw %0, %1" : : "a"(val), "Nd"(port));
-}
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
 
 void drawStringToWindow(uint8_t id, char *text, uint16_t x, uint16_t y, uint16_t color) {
     int idx = -1;

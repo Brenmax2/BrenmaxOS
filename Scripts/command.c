@@ -1,3 +1,11 @@
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
 int started = 0;
 
 void ClearConsole(){
@@ -11,6 +19,14 @@ void ClearConsole(){
     }
 }
 
+uint32_t kstrlen(const char* s) {
+    if (!s) return 0;
+    const char *p = s;
+    while (*p != '\0') {
+        p++;
+    }
+    return p-s;
+}
 void ConsoleLoop() {
     if(started == 0){
         started = 1;
@@ -310,7 +326,8 @@ void ConsoleLoop() {
     }
 }
 
-void printToConsole(int len, char *text){
+void printToConsole(uint32_t len, char *text){
+    len = kstrlen(text);
     for(int i = 0; i < len; i++){
         console_buffer[buffer_index] = text[i];
         console_buffer[buffer_index + 1] = ' ';

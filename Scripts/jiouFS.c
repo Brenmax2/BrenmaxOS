@@ -1,5 +1,12 @@
-    uint32_t address = 0x00320000;
-
+#include "headers/window.h"
+#include "headers/console.h"
+#include "headers/disk.h"
+#include "headers/input.h"
+#include "headers/misc.h"
+#include "headers/gui.h"
+#include "headers/globals.h"
+#include <stdint.h>
+uint32_t address = 0x00320000;
     uint8_t disk_readSector(uint32_t target_address, uint32_t LBA) {
         uint8_t val = 0b11100000 | ((LBA >> 24) & 0x0F);
         outb(0x1F6, val);
