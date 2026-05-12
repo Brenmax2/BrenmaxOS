@@ -1,12 +1,10 @@
-name: Auto Build & Release
+name: Build BrenmaxOS
 
 on:
   push:
-    paths:
-      - '**.c'
-      - '**.ld'
-      - '**.asm'
-      - '**.bin'
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,44 +17,76 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y nasm gcc make
+          sudo apt install -y \
+            build-essential \
+            bison \
+            flex \
+            libgmp3-dev \
+            libmpc-dev \
+            libmpfr-dev \
+            texinfo \
+            nasm \
+            wget
 
-      - name: Build kernel
+      - name: Build i686-elf toolchain
         run: |
-          i686-elf-gcc -ffreestanding -O2 -nostdlib kernel.c -o kernel.bin -T Others/linker.ld
+          mkdir cross
+          cd cross
 
-      - name: Build OS image
+          wget https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.gz
+          wget https://ftp.gnu.org/gnu/gcc/gcc-14.1.0/gcc-14.1.0.tar.gz
+
+          tar -xf binutils-2.42.tar.gz
+          tar -xf gcc-14.1.0.tar.gz
+
+          export PREFIX="$HOME/opt/cross"
+          export TARGET=i686-elf
+          export PATH="$PREFIX/bin:$PATH"
+
+          mkdir build-binutils
+          cd build-binutils
+
+          ../binutils-2.42/configure \
+            --target=$TARGET \
+            --prefix="$PREFIX" \
+            --with-sysroot \
+            --disable-nls \
+            --disable-werror
+
+          make -j$(nproc)
+          make install
+
+          cd ..
+
+          mkdir build-gcc
+          cd build-gcc
+
+          ../gcc-14.1.0/configure \
+            --target=$TARGET \
+            --prefix="$PREFIX" \
+            --disable-nls \
+            --enable-languages=c \
+            --without-headers
+
+          make all-gcc -j$(nproc)
+          make all-target-libgcc -j$(nproc)
+
+          make install-gcc
+          make install-target-libgcc
+
+      - name: Build OS
         run: |
-          nasm -f bin "BrenmaxOS.asm" -o "BrenmaxOS.img"
+          export PATH="$HOME/opt/cross/bin:$PATH"
+          make
 
-      - name: Generate release info
-        id: release_info
-        run: |
-          DATE=$(date +'%d-%m-%y')
-          BASE_TAG="Release-${DATE}"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrenmaxOS
+          path: BrenmaxOS.img
 
-          # Get all existing tags matching today's release
-          git fetch --tags
-
-          MATCHING=$(git tag | grep "^${BASE_TAG}" || true)
-
-          if [ -z "$MATCHING" ]; then
-            FINAL_TAG="${BASE_TAG}"
-          else
-            COUNT=$(echo "$MATCHING" | wc -l)
-            NEXT=$((COUNT + 1))
-            FINAL_TAG="${BASE_TAG}v${NEXT}"
-          fi
-
-          echo "tag=$FINAL_TAG" >> $GITHUB_OUTPUT
-          echo "title=Release ${DATE}" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_info.outputs.tag }}
-          name: ${{ steps.release_info.outputs.title }}
-          files: |
-            BrenmaxOS.img
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: release-${{ github.run_number }}
+          files: BrenmaxOS.img
