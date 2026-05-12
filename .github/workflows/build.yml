@@ -50,8 +50,28 @@ jobs:
           name: BrenmaxOS
           path: BrenmaxOS.img
 
+      - name: Generate Release Tag
+        id: tag
+        shell: powershell
+        run: |
+          $date = Get-Date -Format "dd-MM-yy"
+          $base = "Release-$date"
+
+          $existing = git tag
+
+          $version = 1
+          $tag = $base
+
+          while ($existing -contains $tag) {
+            $version++
+            $tag = "$base-v$version"
+          }
+
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.run_number }}
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
           files: BrenmaxOS.img
