@@ -1,23 +1,40 @@
 @echo off
-echo -- Brenmax is compiling...
+setlocal enabledelayedexpansion
 
-i686-elf-gcc -ffreestanding -O2 -nostdlib kernel.c -o kernel.bin -T Others/linker.ld
-nasm -f bin "BrenmaxOS.asm" -o "BrenmaxOS.img"
+set compiler=i686-elf-gcc
+set objcopy=i686-elf-objcopy
+set asm=nasm
+set flags=-ffreestanding -O3 -Wall -Wextra -fno-stack-protector -g
+set lflags=-T Others/linker.ld -nostdlib
+set aflags=-f bin
 
-echo :) WE GOT C WORKING!!!
-echo :) r u inside 32 bit mode yet?
-echo :) or got some sort of GUI?
-echo :) got text showin??
-echo :) FDS DC?
-echo :) Console?
-echo :) Start menu?
-echo :) I WANNA IDE??
-echo XX or if lucky have u gotten fs yet any??
-echo XX SRDTFDSSCLS
+echo cleaning up compiled files (if they exist)
+if exist *.o del /s /q *.o >nul
+if exist kernel.bin del kernel.bin
+if exist kernel.elf del kernel.elf
+if exist BrenmaxOS.img del BrenmaxOS.img
 
-qemu-system-x86_64.exe  -drive format=raw,file="BrenmaxOS.img" -display sdl  -machine pcspk-audiodev=speaker -audiodev sdl,id=speaker
-pause
+echo compiling kernel.c
+%compiler% %flags% -c kernel.c -o kernel.o
+set ofiles=kernel.o
+echo compiling in scripts\
+for %%f in (Scripts\*.c) do (
+    %compiler% %flags% -c "%%f" -o "%%~dpnf.o"
+    set ofiles=!ofiles! "%%~dpnf.o"
+)
+echo compiling in scripts\others
+for %%f in (Scripts\Others\*.c) do (
+    %compiler% %flags% -c "%%f" -o "%%~dpnf.o"
+    set ofiles=!ofiles! "%%~dpnf.o"
+)
 
+echo linking
+%compiler% %lflags% -o kernel.elf %ofiles%
 
+echo creating kernel.bin from kernel.elf
+%objcopy% -O binary kernel.elf kernel.bin
 
+echo making brenmaxos.img from kernel.bin and brenmaxos.asm
+%asm% %aflags% "BrenmaxOS.asm" -o "BrenmaxOS.img"
 
+echo completed
