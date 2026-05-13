@@ -381,7 +381,8 @@ void updateMouse() {
 
             if (mouse_x < 0) mouse_x = 0;
             if (mouse_y < 0) mouse_y = 0;
-            if (mouse_y > 1024 - 1) mouse_y = 1024 - 1;
+            if (mouse_x > 1024 - 1) mouse_x = 1024 - 1;
+            if (mouse_y > 768 - 1) mouse_y = 768 - 1;
         }
     }
 }
