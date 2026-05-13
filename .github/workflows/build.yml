@@ -75,3 +75,8 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           files: BrenmaxOS.img
+      
+      - name: Cleanup Build Files
+        shell: powershell
+        run: |
+          Remove-Item *.o, *.elf, *.bin, *.img
