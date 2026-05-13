@@ -38,3 +38,8 @@ echo making brenmaxos.img from kernel.bin and brenmaxos.asm
 %asm% %aflags% "BrenmaxOS.asm" -o "BrenmaxOS.img"
 
 echo completed
+
+echo BrenmaxOS is starting...
+qemu-system-x86_64.exe -drive format=raw,file="BrenmaxOS.img" -display sdl
+
+pause

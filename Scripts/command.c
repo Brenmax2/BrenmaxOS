@@ -5,6 +5,7 @@
 #include "headers/misc.h"
 #include "headers/gui.h"
 #include "headers/globals.h"
+#include "headers/stuff.h"
 #include <stdint.h>
 int started = 0;
 
@@ -19,14 +20,6 @@ void ClearConsole(){
     }
 }
 
-uint32_t kstrlen(const char* s) {
-    if (!s) return 0;
-    const char *p = s;
-    while (*p != '\0') {
-        p++;
-    }
-    return p-s;
-}
 void ConsoleLoop() {
     if(started == 0){
         started = 1;
@@ -144,7 +137,7 @@ void ConsoleLoop() {
             }else if(inputBuffer[0] == 'd' &&
             inputBuffer[1] == 'i' &&
             inputBuffer[2] == 'e'){
-                __asm__ __volatile__ ("int $0x10");
+                krestart();
             }else if(inputBuffer[0] == 'w' &&
             inputBuffer[1] == 'd' &&
             inputBuffer[2] == 's' &&
