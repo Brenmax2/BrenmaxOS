@@ -5,7 +5,7 @@
 #include "headers/misc.h"
 #include "headers/gui.h"
 #include "headers/globals.h"
-#include "headers/stuff.h"
+#include "headers/API.h"
 #include <stdint.h>
 int started = 0;
 
@@ -23,7 +23,7 @@ void ClearConsole(){
 void ConsoleLoop() {
     if(started == 0){
         started = 1;
-        printToConsole(11, "BrenmaxOS>");
+        print("BrenmaxOS> ");
         buffer_index--;
     }
     drawRectToWindow(4, 0, 0, 305, 300, 0x0000);
@@ -69,13 +69,14 @@ void ConsoleLoop() {
     }
         char foundnot[] = "CMD Not Found:";
         if (code == 0x1C) { 
-            beep();
+            System_beep();
             console_buffer[buffer_index] = ' '; 
             ConsoleNewLine();
             
             if (inputBuffer[0] == 'c' &&
             inputBuffer[1] == 'l' &&
             inputBuffer[2] == 's') {
+                //cls
                 ClearConsole();
                 started = 0;
                 buffer_index = 0;
@@ -113,6 +114,19 @@ void ConsoleLoop() {
 
                 ConsoleNewLine();
                 clearInputBuf();
+            }else if(inputBuffer[0] == 's' &&
+            inputBuffer[1] == 't' &&
+            inputBuffer[2] == 'r' &&
+            inputBuffer[3] == '1'){
+                char banana[] = "pengi";
+                char banana1[] = "pengi";
+                if(strcmp(banana, banana1) == 1){
+                    print("Same thing");
+                }else{
+                    print("diff thing");
+                }
+                ConsoleNewLine();
+                clearInputBuf();
             }else if(inputBuffer[0] == 't' &&
             inputBuffer[1] == 'd' &&
             inputBuffer[2] == 's' &&
@@ -131,29 +145,46 @@ void ConsoleLoop() {
                     printToConsole(13, "IDE Supported");                        
                     ConsoleNewLine();
                 }
-
+                jiouFS_createFile(512, "justinC");
+                jiouFS_createFile(512, "Brenden");
                 ConsoleNewLine();
                 clearInputBuf();
             }else if(inputBuffer[0] == 'd' &&
             inputBuffer[1] == 'i' &&
             inputBuffer[2] == 'e'){
-                krestart();
+                System_restart();
+            }else if(inputBuffer[0] == 't' &&
+            inputBuffer[1] == 'f' &&
+            inputBuffer[2] == 's'){
+                //op //tfs
+
+                jiouFS_readFile("sixseven", (uint32_t*)0x00770000);
+                ConsoleNewLine();
+                printToConsole(512, (char*)0x00320000);  
+
+                ConsoleNewLine();
+                clearInputBuf();
             }else if(inputBuffer[0] == 'w' &&
             inputBuffer[1] == 'd' &&
             inputBuffer[2] == 's' &&
             inputBuffer[3] == 'c'){
                 //wdsc
-                printToConsole(10, "Writing...");                        
+                print("Writing...");             
                 ConsoleNewLine();
 
                 uint16_t test_buffer[256];
-                test_buffer[0]=0x7242;
-                test_buffer[1]=0x6E65;
-                test_buffer[2]=0x616D;
-                test_buffer[3]=0x4F78;
-                test_buffer[4]=0x0053;
-                for(int i=5;i<256;i++){test_buffer[i]=0x0000;}
-                uint8_t result=disk_writeSector(test_buffer,Origin+2);
+                for(int i=0;i<256;i++){test_buffer[i]=0x0000;}
+
+                test_buffer[0]=0x6548;
+                test_buffer[1]=0x6C6C;
+                test_buffer[2]=0x206F;
+                test_buffer[3]=0x7266;
+                test_buffer[4]=0x6D6F;
+                test_buffer[5]=0x4A20;
+                test_buffer[6]=0x6F69;
+                test_buffer[7]=0x4675;
+                test_buffer[8]=0x0053;
+                uint8_t result=disk_writeSector(test_buffer,Origin+1);
                 
                 if(result == 0){
                     printToConsole(4, "Done");  
@@ -199,39 +230,11 @@ void ConsoleLoop() {
             inputBuffer[2] == 'a' &&
             inputBuffer[3] == 't'){
                 //fmat
-                int lbathing = 0;
                 printToConsole(10, "Formatting");                        
                 ConsoleNewLine();
 
-                uint16_t test_buffer[256];//declare things
-                for(int i=0;i<256;i++){test_buffer[i]=0x0000;}//clstheram
+                jiouFS_FormatDisk();
 
-                //show the disk is BrenmaxFS
-                test_buffer[0]=0x6767; //brenmaxfs identifier
-
-                int entryOrg = 0;
-                //name
-                test_buffer[entryOrg+1]=0x7242;//b r
-                test_buffer[entryOrg+2]=0x6E65;//e n 
-                test_buffer[entryOrg+3]=0x616D;//m a
-                test_buffer[entryOrg+4]=0x4F78;//x O
-                test_buffer[entryOrg+5]=0x0053;//s 0  
-                //extension file
-                test_buffer[entryOrg+6]=0x6767;//g g
-                test_buffer[entryOrg+7]=0x6767;//g 0
-                //isFolder
-                test_buffer[entryOrg+8]=0x0000;//0 NO
-                //LBA Start from origin and size
-                test_buffer[entryOrg+9]=0x0001;//
-                test_buffer[entryOrg+10]=0x0000;//
-                test_buffer[entryOrg+11]=0x0200 ;//bytes extended low
-                test_buffer[entryOrg+12]=0x0000 ;//bytes extended hi
-
-
-                lbathing += Origin;
-                uint8_t result = disk_writeSector(test_buffer,lbathing);
-                
-                if(result == 0){printToConsole(4, "Done");}else{printToConsole(21, "Oh no. Error occured.");}
                 ConsoleNewLine();
                 clearInputBuf();
 
@@ -241,27 +244,6 @@ void ConsoleLoop() {
                 jiouFS_list();
                 clearInputBuf();
 
-            }else if(inputBuffer[0] == 't' &&
-            inputBuffer[1] == 's'){
-                //ts
-                uint16_t test_buffer[256];
-                test_buffer[0]=0x7242;
-                test_buffer[1]=0x6E65;
-                test_buffer[2]=0x616D;
-                test_buffer[3]=0x4F78;
-                test_buffer[4]=0x0053;
-                for(int i=5;i<256;i++){test_buffer[i]=0x0000;}
-                uint8_t result=disk_writeSector(test_buffer,Origin+1);
-                clearInputBuf();
-            }else if(inputBuffer[0] == 'o' &&
-            inputBuffer[1] == 'p'){
-                //op
-
-                jiouFS_readFile(9, "BrenmaxOS", (uint32_t*)0x00770000);
-                printToConsole(512, (char*)0x00320000);  
-
-                ConsoleNewLine();
-                clearInputBuf();
             }else if(inputBuffer[0] == 'a' &&
             inputBuffer[1] == 'b' &&
             inputBuffer[2] == 'o' &&
@@ -320,7 +302,16 @@ void ConsoleLoop() {
 }
 
 void printToConsole(uint32_t len, char *text){
-    len = kstrlen(text);
+    len = strlen(text);
+    for(int i = 0; i < len; i++){
+        console_buffer[buffer_index] = text[i];
+        console_buffer[buffer_index + 1] = ' ';
+        buffer_index++;
+    }
+}
+
+void print(char *text){
+    uint32_t len = strlen(text);
     for(int i = 0; i < len; i++){
         console_buffer[buffer_index] = text[i];
         console_buffer[buffer_index + 1] = ' ';
@@ -331,12 +322,12 @@ void printToConsole(uint32_t len, char *text){
 void clearInputBuf(){
     for (int i = 0; i < 60; i++) {
         inputBuffer[i] = ' ';
-        inputBufferIndex = 0;
+        inputBufferIndex = 1;
     }
 
     inputBufferIndex = 0;
     ConsoleNewLine();
-    printToConsole(11, "BrenmaxOS>");
+    print("BrenmaxOS> ");
     buffer_index--;
 }
 

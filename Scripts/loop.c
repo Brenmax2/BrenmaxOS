@@ -5,6 +5,7 @@
 #include "headers/misc.h"
 #include "headers/gui.h"
 #include "headers/globals.h"
+#include "headers/API.h"
 #include <stdint.h>
 
 int readyto = 0;
@@ -51,7 +52,7 @@ void loop() {
             for (int i = 0; i < 256; i++) {
                 ptr[i] = inw(0x1F0);
             }
-            beep();
+            System_beep();
             address = 0;
         }
     }

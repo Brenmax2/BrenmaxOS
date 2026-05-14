@@ -6,3 +6,4 @@ void ConsoleNewLine();
 void printToConsole(uint32_t len, char *text);
 void clearInputBuf();
 void openConsole();
+void print(char *text);

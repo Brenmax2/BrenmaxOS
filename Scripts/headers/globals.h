@@ -59,5 +59,6 @@ extern char title1[];
 extern char title2[];
 extern char title3[];
 extern char People[];
+extern char strres[11];
 extern char time[9];
 extern char *window_title_ptrs[100];
