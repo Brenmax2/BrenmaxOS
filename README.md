@@ -7,7 +7,7 @@
  - 32 bit
  - ring 0
  - minimal gui
- - no file system
+ - custom low budget fs
  - legacy boot only
 
 <hr>
