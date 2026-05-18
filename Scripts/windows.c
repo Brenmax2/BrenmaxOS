@@ -19,7 +19,7 @@ void add_window(uint8_t id, uint16_t t, uint16_t l, uint16_t w, uint16_t h, char
     }
 }
 
-void bring_to_front(int idx) {
+void bring_to_front(int idx) { 
     if (idx < 0 || idx >= window_count) return;
     if (idx == window_count - 1) return;
 

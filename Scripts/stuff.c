@@ -11,6 +11,7 @@ void krestart(){
     __asm__ __volatile__ ("int $0x10");
 }
 
+
 uint32_t kstrlen(const char* s) {
     if (!s) return 0;
     const char *p = s;

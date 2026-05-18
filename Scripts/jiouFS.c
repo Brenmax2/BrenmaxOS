@@ -81,6 +81,32 @@ uint8_t disk_writeSector(uint16_t *ptr,uint32_t LBA) {
     return 0;
 }
 
+uint8_t disk_writeSectorPRO(uint32_t *ptr,uint32_t LBA) {
+    uint8_t val = 0b11100000 | ((LBA >> 24) & 0x0F);
+    outb(0x1F6, val);
+
+    outb(0x1F2, 1); // 1 sector
+    outb(0x1F3, (uint8_t)(LBA >> 0));
+    outb(0x1F4, (uint8_t)(LBA >> 8));
+    outb(0x1F5, (uint8_t)(LBA >> 16));
+    outb(0x1F7, 0x30);
+
+    // while ((inb(0x1F7) & 0x88) != 0x08) {
+    //     uint8_t status = inb(0x1F7);
+    //     if (status == 0xFF) return 1; // flying bus
+    //     if (status & 0x01)  return 1; // faliuer
+    //     if (status & 0x20)  return 1; // drive faliure
+    // }
+
+    wait(1000);
+
+    uint16_t *ptr16 = (uint16_t *)ptr;
+    for (int i = 0; i < 256; i++) {
+        outw(0x1F0, ptr16[i]);
+    }
+    return 0;
+}
+
 uint8_t disk_detectIDE() {
     outb(0x1F6, 0xA0); 
     for(int i = 0; i < 4; i++) { inb(0x3F6); }
@@ -123,19 +149,56 @@ void jiouFS_list(){
         ConsoleNewLine();
     }
 
-    printToConsole(4, "Done");
+    print("Done");
     ConsoleNewLine();
     clearInputBuf();
 }
 
-void jiouFS_readFileTo(uint32_t LBAFO, uint32_t* address, uint32_t lenB){
-    uint16_t sextoload = lenB / 512; sextoload ++;
-    uint8_t currSec = LBAFO;
-
-    for(int i=0;i<sextoload;i++){
-        disk_readSector((uint32_t)address, LBAFO + 201);
-        LBAFO ++;
+void jiouFS_writeFile(char* name, uint8_t* arrayOfBytes, uint32_t bytesCount) {
+    uint8_t table[512]; 
+    if (disk_readSector((uint32_t)table, 201) != 0) {
+        print("Disk Error reading table");
+        return;
     }
+
+    int targetLen = strlen(name);
+
+    for (int i = 2; i < 500; i += 24) { 
+        if (table[i] == 0) continue;
+        int match = 1;
+        char* diskName = (char*)&table[i];
+
+        for(int j = 0; j < targetLen; j++) { 
+            if (diskName[j] != name[j]) {
+                match = 0;
+                break;
+            }
+        }
+
+        if (match && diskName[targetLen] != '\0' && diskName[targetLen] != ' ') {
+            match = 0;
+        }
+
+        if (match) {
+            uint16_t lba_low = (uint16_t)table[i + 16] | ((uint16_t)table[i + 17] << 8);
+            uint16_t lba_hi  = (uint16_t)table[i + 18] | ((uint16_t)table[i + 19] << 8);
+            uint32_t startSector = (uint32_t)lba_low | ((uint32_t)lba_hi << 16);
+
+            uint32_t sectorsToWrite = (bytesCount + 511) / 512;
+
+            for (uint32_t s = 0; s < sectorsToWrite; s++) {
+                uint16_t* sectorPtr = (uint16_t*)(arrayOfBytes + (s * 512));
+                disk_writeSector(sectorPtr, startSector + 201 + s); 
+            }
+
+            print("File data written to LBA: ");
+            tostr(startSector + 201);
+            print(strres);
+            ConsoleNewLine();
+            return;
+        }
+    }
+    print("File not found for writing.");
 }
 
 void jiouFS_readFile(char *targetName, uint32_t* address) {
@@ -156,7 +219,8 @@ void jiouFS_readFile(char *targetName, uint32_t* address) {
         }
 
         if (match) {
-            // c o n c a t e n a t e
+            // c o n c a t e n a t e or cacoonate as i like to say it
+            uint32_t SexToLoad = 0;
             uint16_t lba_low = (uint16_t)table[i + 16] | ((uint16_t)table[i + 17] << 8);
             uint16_t lba_hi  = (uint16_t)table[i + 18] | ((uint16_t)table[i + 19] << 8);
             uint32_t startSector = (uint32_t)lba_low | ((uint32_t)lba_hi << 16);
@@ -164,8 +228,21 @@ void jiouFS_readFile(char *targetName, uint32_t* address) {
             uint16_t size_low = (uint16_t)table[i + 20] | ((uint16_t)table[i + 21] << 8);
             uint16_t size_hi  = (uint16_t)table[i + 22] | ((uint16_t)table[i + 23] << 8);
             uint32_t fileSize = (uint32_t)size_low | ((uint32_t)size_hi << 16);
-            disk_readSector(0x00320000, startSector + Origin);
 
+            SexToLoad = (fileSize + 511) / 512;
+            tostr(SexToLoad);
+            print("Loading ");
+            print(strres);
+            
+            for(uint32_t i = 0; i < SexToLoad ; i++){
+                ConsoleNewLine();
+                print("Load Sector");
+                tostr(startSector+i-1+Origin);
+                print(strres);
+                disk_readSector((uint32_t)address + (512*i), startSector + i + Origin);
+            }
+
+            ConsoleNewLine();
             tostr(startSector);
             print("Start Sector: ");
             print(strres);
@@ -177,94 +254,48 @@ void jiouFS_readFile(char *targetName, uint32_t* address) {
     }
 }
 
+
+
 void jiouFS_FormatDisk(){
-    uint16_t buffer[256];//declare things
-    for(int i=0;i<256;i++){buffer[i]=0x0000;}//clstheram
-    
+    uint16_t buffer[256];
+    for(int i=0;i<256;i++){buffer[i]=0x0000;}
     //show the disk is BrenmaxFS
-    buffer[0]=0x6767; //brenmaxfs identifier
+    buffer[0]=0x6767; //brenmaxfs identifier i love 67
     int lbathing = 0;
     int entryOrg = 0;
-    //name
-    buffer[entryOrg+1]=0x6574;
-    buffer[entryOrg+2]=0x7473;
-    buffer[entryOrg+3]=0x6E69;
-    buffer[entryOrg+4]=0x0067;
-    buffer[entryOrg+5]=0x0000;
-    //extension file
-    buffer[entryOrg+6] = 0x7874; // t x 
-    buffer[entryOrg+7] = 0x0074; // t 0 
-    //isFolder
-    buffer[entryOrg+8]=0x0000;//0 NO
-    //LBA Start from origin and size
-    buffer[entryOrg+9]=0x0001;//
-    buffer[entryOrg+10]=0x0000;//
-    buffer[entryOrg+11]=0x0200 ;//bytes extended low
-    buffer[entryOrg+12]=0x0000 ;//bytes extended hi
-
-    entryOrg = 12;
-
-    //name
-    buffer[entryOrg+1]=0x6973;
-    buffer[entryOrg+2]=0x7378;
-    buffer[entryOrg+3]=0x7665;
-    buffer[entryOrg+4]=0x6E65;
-    buffer[entryOrg+5]=0x0000;
-    //extension file
-    buffer[entryOrg+6] = 0x7874; // t x 
-    buffer[entryOrg+7] = 0x0074; // t 0 
-    //isFolder
-    buffer[entryOrg+8]=0x0000;//0 NO
-    //LBA Start from origin and size
-    buffer[entryOrg+9]=0x0001;//
-    buffer[entryOrg+10]=0x0000;//
-    buffer[entryOrg+11]=0x0200 ;//bytes extended low
-    buffer[entryOrg+12]=0x0000 ;//bytes extended hi
-
-    entryOrg = 24;
-
-    //name
-    buffer[entryOrg+1]=0x696A;
-    buffer[entryOrg+2]=0x756F;
-    buffer[entryOrg+3]=0x5346;
-    buffer[entryOrg+4]=0x0000;
-    buffer[entryOrg+5]=0x0000;
-    //extension file
-    buffer[entryOrg+6] = 0x7874; // t x 
-    buffer[entryOrg+7] = 0x0074; // t 0 
-    //isFolder
-    buffer[entryOrg+8]=0x0000;//0 NO
-    //LBA Start from origin and size
-    buffer[entryOrg+9]=0x0001;//
-    buffer[entryOrg+10]=0x0000;//
-    buffer[entryOrg+11]=0x0200 ;//bytes extended low
-    buffer[entryOrg+12]=0x0000 ;//bytes extended hi
-
     lbathing += Origin;
     uint8_t result = disk_writeSector(buffer,lbathing);
-
     if(result == 0){printToConsole(4, "Done");}else{printToConsole(21, "Oh no. Error occured.");}
 }
 
-void jiouFS_createFile(uint32_t bytes, char* name){
+void jiouFS_createFile(uint32_t bytes, char* name, char* extension){
     uint16_t buffalo[256];
     uint32_t secstoload = (bytes + 511) / 512;
     disk_readSector((uint32_t)buffalo, 201);
 
     int entryStart = -1;
+    uint32_t nextAvailableLBA = 1; 
 
     for (int i = 1; i < 256; i += 12) {
         if (buffalo[i] == 0) {
-            entryStart = i;
-            break;
+            if (entryStart == -1) entryStart = i; 
+        } else {
+            uint32_t entryLBA = buffalo[i + 8] | (buffalo[i + 9] << 16);
+            uint32_t entryBites = buffalo[i + 10] | (buffalo[i + 11] << 16);
+            uint32_t entrySectors = (entryBites + 511) / 512;
+
+            if (entryLBA + entrySectors > nextAvailableLBA) {
+                nextAvailableLBA = entryLBA + entrySectors;
+            }
         }
     }
 
     if (entryStart == -1) {
-        print("Sector is full!");
+        print("Oh no.");
         return;
     }
 
+    // name
     for (uint32_t i = 0; i < 5; i++) { 
         uint8_t char1 = name[i * 2];
         uint8_t char2 = name[i * 2 + 1];
@@ -272,20 +303,108 @@ void jiouFS_createFile(uint32_t bytes, char* name){
         if (char1 == '\0' || char2 == '\0') break;
     }
 
-    //extens
-    buffalo[entryStart + 5] = 0x7874; 
-    buffalo[entryStart + 6] = 0x0074;
-    //isfolder
-    buffalo[entryStart + 7] = 0x0001; 
-    //sex
-    buffalo[entryStart + 8] = (uint16_t)(secstoload & 0xFFFF);       
-    buffalo[entryStart + 9] = (uint16_t)((secstoload >> 16) & 0xFFFF); 
-    //bits in sise
+    // extens
+    buffalo[entryStart + 5] = (extension[1] << 8) | extension[0]; 
+    buffalo[entryStart + 6] = (0x00 << 8) | extension[2];
+    // folder?
+    buffalo[entryStart + 7] = 0x0000; 
+    // lba start
+    buffalo[entryStart + 8] = (uint16_t)(nextAvailableLBA & 0xFFFF);       
+    buffalo[entryStart + 9] = (uint16_t)((nextAvailableLBA >> 16) & 0xFFFF); 
+    // size in bites
     buffalo[entryStart + 10] = (uint16_t)(bytes & 0xFFFF);       
     buffalo[entryStart + 11] = (uint16_t)((bytes >> 16) & 0xFFFF); 
+    
     disk_writeSector(buffalo, 201);
     
-    print("Created at index: ");
+    print("Entry start: ");
     tostr(entryStart);
     print(strres);
+}
+
+uint8_t jiouFS_deleteFile(char* name) {
+    uint16_t buffalo[256];
+    disk_readSector((uint32_t)buffalo, 201);
+
+    for (int i = 1; i < 256; i += 12) {
+        bool match = true;
+        for (int j = 0; j < 5; j++) {
+            uint8_t char1 = name[j * 2];
+            uint8_t char2 = name[j * 2 + 1];
+            uint16_t nameWord = (char2 << 8) | char1;
+            if (buffalo[i + j] != nameWord) {match = false;break;}
+            if (char1 == '\0' || char2 == '\0') break;
+        }
+
+        if (match && buffalo[i] != 0) {
+            for (int k = 0; k < 12; k++) {buffalo[i + k] = 0;}
+            uint8_t result = disk_writeSector(buffalo, 201);
+            if (result == 0) {return 0;} else {return 1;}
+        }
+    }
+    return 2;
+}
+
+uint8_t jiouFS_renameFile(char* oldName, char* newName) {
+    uint16_t buffalo[256];
+    disk_readSector((uint32_t)buffalo, 201);
+
+    for (int i = 1; i < 256; i += 12) {
+        int match = 1;
+        
+        for (int j = 0; j < 5; j++) {
+            uint8_t char1 = oldName[j * 2];
+            uint8_t char2 = oldName[j * 2 + 1];
+            uint16_t nameWord = (char2 << 8) | char1;
+
+            if (buffalo[i + j] != nameWord) {
+                match = 0;
+                break;
+            }
+            if (char1 == '\0' || char2 == '\0') break;
+        }
+
+        if (match==1 && buffalo[i] != 0) {
+            for (int k = 0; k < 5; k++) {
+                buffalo[i + k] = 0;
+            }
+
+            for (uint32_t i_name = 0; i_name < 5; i_name++) { 
+                uint8_t n_char1 = newName[i_name * 2];
+                uint8_t n_char2 = newName[i_name * 2 + 1];
+                buffalo[i + i_name] = (n_char2 << 8) | n_char1;
+                if (n_char1 == '\0' || n_char2 == '\0') break;
+            }
+
+            uint8_t result = disk_writeSector(buffalo, 201);
+            
+            if (result == 0) {
+                print("Renamed file");
+                return 0;
+            } else {
+                print("Oh no. Error occured.");
+                return 1;
+            }
+        }
+    }
+
+    print("Oh no. File not found");
+    return 2;
+}
+
+void openTxtView(char* name){
+    jiouFS_readFile(name, (uint32_t*)0x00770000);
+    add_window(8, 100, 100, 640, 480, "File content");
+    for(uint8_t i = 0; i < strlen(name) ; i++){
+        filenamecurrtextviewdawgwtf[i] = name[i];
+        filenamecurrtextviewdawgwtf[i+1] = '\0';
+    }
+}
+
+void TxtView_Loop(){
+    uint16_t nexty = 12;
+    drawStringToWindow(8, filenamecurrtextviewdawgwtf, 3, 3, 0x0000);
+    for(int i = 0; i < 100; i++){
+        drawStringToWindow(8, "the vacumm clearner as exploded successfully", 3, nexty, 0x0000);
+    }
 }

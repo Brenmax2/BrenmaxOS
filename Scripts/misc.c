@@ -116,7 +116,7 @@ void drawAllWindows() {
                 }
             }
         } else if (id == 4){
-            ConsoleLoop();
+            Console_loop();
         } else if (id == 5){
             PianoLoop();
         } else if (id == 6){
@@ -179,6 +179,8 @@ void drawAllWindows() {
                 Wallpaper = 1;
             }
 
+        }else if(id == 8){
+            TxtView_Loop();
         }
     }
 }
